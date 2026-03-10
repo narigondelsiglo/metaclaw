@@ -45,7 +45,9 @@ When designing a setup, match the user's requirements to tool categories. Prefer
   }
 }
 ```
-Run SearXNG locally: `docker run -d -p 8080:8080 searxng/searxng` — then set `SEARXNG_URL=http://localhost:8080`.
+**When using docker-compose**: SearXNG starts automatically as a sibling container — no extra setup needed. The gateway reaches it at `http://searxng:8080` by default.
+
+**Standalone**: `docker run -d -p 8080:8080 searxng/searxng` — then set `SEARXNG_URL=http://localhost:8080`.
 
 ---
 
