@@ -1,10 +1,3 @@
-x-llm-env: &llm-env
-  ZAI_API_KEY: ${ZAI_API_KEY:-}
-  ZAI_BASE_URL: ${ZAI_BASE_URL:-}
-  ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
-  OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-  OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
-
 services:
   openclaw-gateway:
     image: ghcr.io/openclaw/openclaw:latest
@@ -14,18 +7,12 @@ services:
     depends_on:
       searxng:
         condition: service_healthy
+    env_file:
+      - .env
     environment:
-      <<: *llm-env
       # lan = bind to all interfaces inside the container; the host-side port
       # is still locked to 127.0.0.1 via the ports mapping above.
       OPENCLAW_GATEWAY_BIND: lan
-      OLLAMA_EMBED_URL: ${OLLAMA_EMBED_URL:-http://host.docker.internal:11434}
-      # Search — SearXNG runs as a sibling container, no API key needed
-      SEARXNG_URL: ${SEARXNG_URL:-http://searxng:8080}
-      BRAVE_API_KEY: ${BRAVE_API_KEY:-}
-      # Channels
-      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
-      DISCORD_BOT_TOKEN: ${DISCORD_BOT_TOKEN:-}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
@@ -46,9 +33,8 @@ services:
   searxng:
     image: searxng/searxng:latest
     restart: unless-stopped
-    environment:
-      # Must be set in .env before first run — no insecure default provided
-      SEARXNG_SECRET_KEY: ${SEARXNG_SECRET_KEY:?Set SEARXNG_SECRET_KEY in .env}
+    env_file:
+      - .env
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
       interval: 10s
@@ -66,8 +52,8 @@ services:
       - openclaw-home:/home/node/.openclaw
       - ./skills/metaclaw-setup-architect:/home/node/.openclaw/skills/metaclaw-setup-architect:ro
       - ./test/workspace:/home/node/.openclaw/workspace
-    environment:
-      <<: *llm-env
+    env_file:
+      - .env
     entrypoint: ["node", "dist/index.js"]
     profiles:
       - cli
