@@ -110,8 +110,8 @@ Run SearXNG locally: `docker run -d -p 8080:8080 searxng/searxng` — then set `
 
 | Tool | Description | Type |
 |------|-------------|------|
-| `zai` | z.ai (GLM-4) — OpenAI-compatible, Code Plan Pro subscription replaces Anthropic | api |
-| `ollama` | Local model hosting — Llama, Qwen, Gemma, Mistral, no key needed | cli |
+| `ollama` | Local model hosting — Llama, Qwen, Gemma, Mistral, no key needed (zero-config default) | cli |
+| `zai` | z.ai (GLM-4) — OpenAI-compatible cloud, optional Code Plan Pro subscription | api |
 | `openai` | GPT-4o, o1, o3, Codex, DALL-E, Whisper | api |
 | `anthropic` | Claude Opus, Sonnet, Haiku | api |
 | `google` | Gemini Pro, Flash, Imagen | api |
@@ -122,7 +122,22 @@ Run SearXNG locally: `docker run -d -p 8080:8080 searxng/searxng` — then set `
 | `codex-cli` | OpenAI Codex for code generation via CLI | cli |
 | `claude-code` | Anthropic's coding agent | cli |
 
-**z.ai (GLM) config** — OpenAI-compatible, works as Anthropic drop-in:
+**Ollama (zero-config default)** — runs locally, no API key:
+```json
+{
+  "agents": {
+    "defaults": {
+      "model": "ollama/llama3.2",
+      "provider": {
+        "baseURL": "env:OLLAMA_BASE_URL"
+      }
+    }
+  }
+}
+```
+Install Ollama, `ollama pull llama3.2`, done. Set `OLLAMA_BASE_URL=http://192.168.1.x:11434` to use a machine on your LAN.
+
+**z.ai (GLM) config** — optional OpenAI-compatible cloud provider:
 ```json
 {
   "agents": {
@@ -138,22 +153,24 @@ Run SearXNG locally: `docker run -d -p 8080:8080 searxng/searxng` — then set `
 ```
 Available z.ai models: `zai/glm-4` (flagship), `zai/glm-4-flash` (fast/cheap), `zai/glm-4-air`.
 
-**Custom Ollama URL** — point at remote or LAN Ollama instance:
+**Multi-model routing pattern** (fully local, no API keys at all):
 ```json
 {
   "agents": {
     "defaults": {
-      "model": "ollama/qwen2.5:14b",
-      "provider": {
-        "baseURL": "env:OLLAMA_BASE_URL"
+      "model": "ollama/llama3.2",
+      "models": {
+        "coding": "ollama/qwen2.5-coder:14b",
+        "research": "ollama/llama3.2",
+        "creative": "ollama/llama3.2",
+        "fast": "ollama/llama3.2:3b"
       }
     }
   }
 }
 ```
-Set `OLLAMA_BASE_URL=http://192.168.1.x:11434` to use a machine on your LAN.
 
-**Multi-model routing pattern** (local-first, no paid keys):
+**Multi-model routing pattern** (hybrid — z.ai cloud + local Ollama):
 ```json
 {
   "agents": {

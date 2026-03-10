@@ -25,8 +25,8 @@ Complete end-to-end example of a multi-agent setup for managing a Skool communit
 
 | Agent | Role | Model | Channel |
 |-------|------|-------|---------|
-| community-brain | Answer questions, find lessons, manage FAQ, build knowledge base | zai/glm-4 | Discord (community channels) |
-| engagement-ops | Welcome new members, track engagement, weekly reports to owner | zai/glm-4-flash | Discord (onboarding) + WhatsApp (owner) |
+| community-brain | Answer questions, find lessons, manage FAQ, build knowledge base | ollama/llama3.2 | Discord (community channels) |
+| engagement-ops | Welcome new members, track engagement, weekly reports to owner | ollama/llama3.2:3b | Discord (onboarding) + WhatsApp (owner) |
 
 ### Data Flow
 ```
@@ -44,10 +44,9 @@ New member joins → engagement-ops (welcome + onboarding) → tracks engagement
 {
   "agents": {
     "defaults": {
-      "model": "zai/glm-4",
+      "model": "ollama/llama3.2",
       "provider": {
-        "baseURL": "env:ZAI_BASE_URL",
-        "apiKey": "env:ZAI_API_KEY"
+        "baseURL": "env:OLLAMA_BASE_URL"
       }
     },
     "list": [
@@ -59,7 +58,7 @@ New member joins → engagement-ops (welcome + onboarding) → tracks engagement
       {
         "id": "engagement-ops",
         "workspace": "~/.openclaw/workspace-engagement-ops",
-        "model": "zai/glm-4-flash",
+        "model": "ollama/llama3.2:3b",
         "sandbox": { "mode": "all", "scope": "agent" }
       }
     ]
@@ -495,50 +494,52 @@ touch ~/.openclaw/workspace-community-brain/memory/knowledge/faq.md
 touch ~/.openclaw/workspace-community-brain/memory/knowledge/lesson-index.md
 touch ~/.openclaw/workspace-community-brain/memory/knowledge/resources.md
 
-# 6. Set environment variables
-
-# LLM — z.ai (no Anthropic/OpenAI key needed)
-export ZAI_API_KEY="your-z.ai-api-key"
-export ZAI_BASE_URL="https://api.z.ai/v1"
-
-# Local Ollama for embeddings (gemma2)
-# Make sure Ollama is running: ollama serve
-# Pull the embedding model: ollama pull gemma2:2b
+# 6. Set up Ollama (LLM + embeddings — no API key needed)
+# Install: https://ollama.com
+ollama serve &
+ollama pull llama3.2
+ollama pull llama3.2:3b
+ollama pull gemma2:2b
+export OLLAMA_BASE_URL="http://localhost:11434"
 export OLLAMA_EMBED_URL="http://localhost:11434"
 
-# Search — SearXNG (no Brave key needed)
-# Run: docker run -d -p 8080:8080 searxng/searxng
-export SEARXNG_URL="http://localhost:8080"
+# SearXNG is included in docker-compose — no setup needed
 
-# Channels
+# 7. Set channel tokens
 export DISCORD_BOT_TOKEN="your-discord-bot-token"
 export OWNER_PHONE="+1234567890"
 
-# 7. Create Discord server with channels: #questions, #general, #welcome, #introductions
-# 8. Configure Skool community URL in workspace-community-brain/memory/SYSTEM.md
+# Optional: use z.ai cloud models instead of local Ollama
+# export ZAI_API_KEY="your-z.ai-api-key"
+# export ZAI_BASE_URL="https://api.z.ai/v1"
 
-# 9. Configure channels
+# 8. Create Discord server with channels: #questions, #general, #welcome, #introductions
+# 9. Configure Skool community URL in workspace-community-brain/memory/SYSTEM.md
+
+# 10. Configure channels
 openclaw channels login --channel discord --account community-bot
 openclaw channels login --channel whatsapp
 
-# 10. Restart and verify
+# 11. Restart and verify
 openclaw gateway restart
 openclaw agents list --bindings
 openclaw channels status --probe
 
-# 11. Initial knowledge base population
+# 12. Initial knowledge base population
 # Send community-brain: "Please browse our Skool community at [URL] and index all published lessons"
 ```
 
-### Required Accounts / Keys
-- **z.ai API Key** (REQUIRED) — sign up at z.ai, Code Plan Pro or higher
-- **Ollama** (REQUIRED for local embeddings) — install at ollama.com, pull `gemma2:2b`
-- **SearXNG** (REQUIRED for search) — `docker run -d -p 8080:8080 searxng/searxng`, no key needed
+### Required
+- **Ollama** — install at ollama.com, pull `llama3.2`, `llama3.2:3b`, and `gemma2:2b` (for embeddings)
 - **Discord Bot Token** (Developer Portal — enable Message Content Intent)
 - **WhatsApp** linked to owner's phone number
 - **Skool community URL** (for browser-based scraping)
 
-No Anthropic, OpenAI, or Brave API keys required.
+### Optional cloud upgrades
+- **z.ai** — set `ZAI_API_KEY` + `ZAI_BASE_URL` and change model to `zai/glm-4`
+- **Anthropic / OpenAI** — set the corresponding API key and change model
+
+SearXNG is included in docker-compose. Zero API keys required for the base setup.
 
 ### First Run
 After installation, send a message to community-brain:
