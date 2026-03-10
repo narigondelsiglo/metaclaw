@@ -25,8 +25,8 @@ Complete end-to-end example of a multi-agent setup for managing a Skool communit
 
 | Agent | Role | Model | Channel |
 |-------|------|-------|---------|
-| community-brain | Answer questions, find lessons, manage FAQ, build knowledge base | claude-sonnet | Discord (community channels) |
-| engagement-ops | Welcome new members, track engagement, weekly reports to owner | gemini-2.5-flash | Discord (onboarding) + WhatsApp (owner) |
+| community-brain | Answer questions, find lessons, manage FAQ, build knowledge base | zai/glm-4 | Discord (community channels) |
+| engagement-ops | Welcome new members, track engagement, weekly reports to owner | zai/glm-4-flash | Discord (onboarding) + WhatsApp (owner) |
 
 ### Data Flow
 ```
@@ -44,7 +44,11 @@ New member joins → engagement-ops (welcome + onboarding) → tracks engagement
 {
   "agents": {
     "defaults": {
-      "model": "anthropic/claude-sonnet-4"
+      "model": "zai/glm-4",
+      "provider": {
+        "baseURL": "env:ZAI_BASE_URL",
+        "apiKey": "env:ZAI_API_KEY"
+      }
     },
     "list": [
       {
@@ -55,6 +59,7 @@ New member joins → engagement-ops (welcome + onboarding) → tracks engagement
       {
         "id": "engagement-ops",
         "workspace": "~/.openclaw/workspace-engagement-ops",
+        "model": "zai/glm-4-flash",
         "sandbox": { "mode": "all", "scope": "agent" }
       }
     ]
@@ -90,16 +95,26 @@ New member joins → engagement-ops (welcome + onboarding) → tracks engagement
   },
   "mcp": {
     "servers": {
-      "brave-search": {
+      "searxng": {
         "type": "stdio",
-        "command": "npx",
-        "args": ["-y", "@anthropic/mcp-server-brave-search"],
-        "env": { "BRAVE_API_KEY": "env:BRAVE_API_KEY" }
+        "command": "uvx",
+        "args": ["mcp-searxng"],
+        "env": { "SEARXNG_URL": "env:SEARXNG_URL" }
       },
       "filesystem": {
         "type": "stdio",
         "command": "npx",
         "args": ["-y", "@anthropic/mcp-server-filesystem", "~/.openclaw/workspace-community-brain/knowledge"]
+      },
+      "rag": {
+        "type": "stdio",
+        "command": "uvx",
+        "args": ["mcp-rag"],
+        "env": {
+          "EMBED_BASE_URL": "env:OLLAMA_EMBED_URL",
+          "EMBED_MODEL": "gemma2:2b",
+          "EMBED_API_KEY": "ollama"
+        }
       }
     }
   }
@@ -127,7 +142,8 @@ You are the most knowledgeable member of the community. You answer questions by 
 
 ## Tools Available
 - `browser` — browse Skool community pages, find lessons, read content
-- `brave-search` — search for supplementary information
+- `searxng` — search for supplementary information (self-hosted, no API key)
+- `rag` — semantic search over local knowledge base using Gemma embeddings
 - `filesystem` — read/write knowledge base files
 - `read` / `write` — manage FAQ and knowledge files
 
@@ -480,9 +496,23 @@ touch ~/.openclaw/workspace-community-brain/memory/knowledge/lesson-index.md
 touch ~/.openclaw/workspace-community-brain/memory/knowledge/resources.md
 
 # 6. Set environment variables
+
+# LLM — z.ai (no Anthropic/OpenAI key needed)
+export ZAI_API_KEY="your-z.ai-api-key"
+export ZAI_BASE_URL="https://api.z.ai/v1"
+
+# Local Ollama for embeddings (gemma2)
+# Make sure Ollama is running: ollama serve
+# Pull the embedding model: ollama pull gemma2:2b
+export OLLAMA_EMBED_URL="http://localhost:11434"
+
+# Search — SearXNG (no Brave key needed)
+# Run: docker run -d -p 8080:8080 searxng/searxng
+export SEARXNG_URL="http://localhost:8080"
+
+# Channels
 export DISCORD_BOT_TOKEN="your-discord-bot-token"
 export OWNER_PHONE="+1234567890"
-export BRAVE_API_KEY="your-brave-api-key"
 
 # 7. Create Discord server with channels: #questions, #general, #welcome, #introductions
 # 8. Configure Skool community URL in workspace-community-brain/memory/SYSTEM.md
@@ -501,10 +531,14 @@ openclaw channels status --probe
 ```
 
 ### Required Accounts / Keys
-- Discord Bot Token (Developer Portal — enable Message Content Intent)
-- Brave Search API Key (for supplementary search)
-- WhatsApp linked to owner's phone number
-- Skool community URL (for browser-based scraping)
+- **z.ai API Key** (REQUIRED) — sign up at z.ai, Code Plan Pro or higher
+- **Ollama** (REQUIRED for local embeddings) — install at ollama.com, pull `gemma2:2b`
+- **SearXNG** (REQUIRED for search) — `docker run -d -p 8080:8080 searxng/searxng`, no key needed
+- **Discord Bot Token** (Developer Portal — enable Message Content Intent)
+- **WhatsApp** linked to owner's phone number
+- **Skool community URL** (for browser-based scraping)
+
+No Anthropic, OpenAI, or Brave API keys required.
 
 ### First Run
 After installation, send a message to community-brain:

@@ -21,13 +21,31 @@ When designing a setup, match the user's requirements to tool categories. Prefer
 | `puppeteer-mcp` | Headless Chrome automation | mcp |
 | `browser-use` | AI-driven web page operation — "sees" and "operates" pages | mcp |
 | `web-search` | Built-in web search capability | native |
-| `brave-search` | Privacy-focused web search API | mcp |
+| `searxng` | Self-hosted meta-search — no API key, privacy-preserving | mcp |
+| `brave-search` | Privacy-focused web search API (requires key) | mcp |
 | `google-search` | Google Custom Search API | api |
 | `serpapi` | Search engine results page scraping | api |
 | `firecrawl` | Web scraping and crawling at scale | mcp |
 | `url-to-markdown` | Convert any webpage to clean markdown | cli |
 
 **Common use cases**: Research agents, SEO tools, content scrapers, monitoring bots
+
+**SearXNG MCP config** (self-hosted, zero API key):
+```json
+{
+  "mcp": {
+    "servers": {
+      "searxng": {
+        "type": "stdio",
+        "command": "uvx",
+        "args": ["mcp-searxng"],
+        "env": { "SEARXNG_URL": "env:SEARXNG_URL" }
+      }
+    }
+  }
+}
+```
+Run SearXNG locally: `docker run -d -p 8080:8080 searxng/searxng` — then set `SEARXNG_URL=http://localhost:8080`.
 
 ---
 
@@ -92,10 +110,11 @@ When designing a setup, match the user's requirements to tool categories. Prefer
 
 | Tool | Description | Type |
 |------|-------------|------|
+| `zai` | z.ai (GLM-4) — OpenAI-compatible, Code Plan Pro subscription replaces Anthropic | api |
+| `ollama` | Local model hosting — Llama, Qwen, Gemma, Mistral, no key needed | cli |
 | `openai` | GPT-4o, o1, o3, Codex, DALL-E, Whisper | api |
 | `anthropic` | Claude Opus, Sonnet, Haiku | api |
 | `google` | Gemini Pro, Flash, Imagen | api |
-| `ollama` | Local model hosting (Llama, Qwen, Mistral, etc.) | cli |
 | `openrouter` | Multi-provider model routing | api |
 | `groq` | Ultra-fast inference (Llama, Mixtral) | api |
 | `together` | Open-source model hosting | api |
@@ -103,17 +122,48 @@ When designing a setup, match the user's requirements to tool categories. Prefer
 | `codex-cli` | OpenAI Codex for code generation via CLI | cli |
 | `claude-code` | Anthropic's coding agent | cli |
 
-**Multi-model routing pattern**:
+**z.ai (GLM) config** — OpenAI-compatible, works as Anthropic drop-in:
 ```json
 {
   "agents": {
     "defaults": {
-      "model": "anthropic/claude-opus-4",
+      "model": "zai/glm-4",
+      "provider": {
+        "baseURL": "env:ZAI_BASE_URL",
+        "apiKey": "env:ZAI_API_KEY"
+      }
+    }
+  }
+}
+```
+Available z.ai models: `zai/glm-4` (flagship), `zai/glm-4-flash` (fast/cheap), `zai/glm-4-air`.
+
+**Custom Ollama URL** — point at remote or LAN Ollama instance:
+```json
+{
+  "agents": {
+    "defaults": {
+      "model": "ollama/qwen2.5:14b",
+      "provider": {
+        "baseURL": "env:OLLAMA_BASE_URL"
+      }
+    }
+  }
+}
+```
+Set `OLLAMA_BASE_URL=http://192.168.1.x:11434` to use a machine on your LAN.
+
+**Multi-model routing pattern** (local-first, no paid keys):
+```json
+{
+  "agents": {
+    "defaults": {
+      "model": "zai/glm-4",
       "models": {
-        "coding": "openai/codex-mini",
-        "research": "google/gemini-2.5-flash",
-        "creative": "anthropic/claude-sonnet-4",
-        "fast": "groq/llama-4-scout"
+        "coding": "ollama/qwen2.5-coder:14b",
+        "research": "zai/glm-4-flash",
+        "creative": "zai/glm-4",
+        "fast": "ollama/llama3.2:3b"
       }
     }
   }
@@ -127,10 +177,11 @@ When designing a setup, match the user's requirements to tool categories. Prefer
 | Tool | Description | Type |
 |------|-------------|------|
 | `rag-mcp` | Retrieval-Augmented Generation over local documents | mcp |
+| `ollama-embed` | Local embeddings via Ollama (gemma2, nomic-embed-text) — no key needed | cli |
 | `sqlite-mcp` | SQLite database operations | mcp |
 | `postgres-mcp` | PostgreSQL database operations | mcp |
 | `supabase-mcp` | Supabase (Postgres + Auth + Storage + Realtime) | mcp |
-| `pinecone` | Vector database for embeddings | api |
+| `pinecone` | Vector database for embeddings (cloud) | api |
 | `chromadb` | Local vector database | cli |
 | `redis-mcp` | Redis key-value store | mcp |
 | `notion-mcp` | Notion pages, databases, blocks | mcp |
@@ -139,6 +190,35 @@ When designing a setup, match the user's requirements to tool categories. Prefer
 | `airtable-mcp` | Airtable bases and records | mcp |
 
 **Common use cases**: Knowledge bases, RAG systems, data pipelines, CRM
+
+**Local embedding with Gemma via Ollama** (replaces Mistral/OpenAI embeddings):
+```bash
+# Pull a local embedding model — gemma2 works well for semantic search
+ollama pull gemma2:2b
+# Or use a dedicated embedding model (smaller, faster)
+ollama pull nomic-embed-text
+```
+
+Configure `rag-mcp` to use local Ollama for embeddings:
+```json
+{
+  "mcp": {
+    "servers": {
+      "rag": {
+        "type": "stdio",
+        "command": "uvx",
+        "args": ["mcp-rag"],
+        "env": {
+          "EMBED_BASE_URL": "env:OLLAMA_EMBED_URL",
+          "EMBED_MODEL": "gemma2:2b",
+          "EMBED_API_KEY": "ollama"
+        }
+      }
+    }
+  }
+}
+```
+No Mistral or OpenAI key needed — embeddings run fully offline.
 
 ---
 
