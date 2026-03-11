@@ -35,10 +35,6 @@ services:
     restart: unless-stopped
     env_file:
       - .env
-    environment:
-      # Fail fast if SEARXNG_SECRET_KEY is missing or empty — env_file alone
-      # would silently pass an empty string, which is a security risk.
-      SEARXNG_SECRET_KEY: ${SEARXNG_SECRET_KEY:?Set SEARXNG_SECRET_KEY in .env (run: openssl rand -hex 32)}
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
       interval: 10s
