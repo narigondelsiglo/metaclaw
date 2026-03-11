@@ -510,7 +510,7 @@ openclaw channels status --probe
 - **YouTube channels to monitor** — add URLs to scout's memory/SYSTEM.md
 
 ### Optional cloud upgrades
-- **z.ai** — set `ZAI_API_KEY` + `ZAI_BASE_URL` and change model to `zai/glm-4`
+- **z.ai** — set `ZAI_API_KEY` + `ZAI_BASE_URL` and change model to `zai/glm-4.7`
 - **Anthropic / OpenAI** — set the corresponding API key and change model
 
 SearXNG is included in docker-compose. Zero API keys required for the base setup.

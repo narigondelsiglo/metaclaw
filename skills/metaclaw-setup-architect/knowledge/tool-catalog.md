@@ -144,7 +144,7 @@ Install Ollama, `ollama pull llama3.2`, done. Set `OLLAMA_BASE_URL=http://192.16
 {
   "agents": {
     "defaults": {
-      "model": "zai/glm-4",
+      "model": "zai/glm-5",
       "provider": {
         "baseURL": "env:ZAI_BASE_URL",
         "apiKey": "env:ZAI_API_KEY"
@@ -153,7 +153,7 @@ Install Ollama, `ollama pull llama3.2`, done. Set `OLLAMA_BASE_URL=http://192.16
   }
 }
 ```
-Available z.ai models: `zai/glm-4` (flagship), `zai/glm-4-flash` (fast/cheap), `zai/glm-4-air`.
+Available z.ai models: `zai/glm-5` (flagship, Opus-tier), `zai/glm-4.7` (balanced, Sonnet-tier), `zai/glm-4.5-air` (fast/cheap, Haiku-tier).
 
 **Multi-model routing pattern** — choose one option:
 
@@ -179,12 +179,12 @@ Available z.ai models: `zai/glm-4` (flagship), `zai/glm-4-flash` (fast/cheap), `
 {
   "agents": {
     "defaults": {
-      "model": "zai/glm-4",
+      "model": "zai/glm-4.7",
       "models": {
         "coding": "ollama/qwen2.5-coder:14b",
-        "research": "zai/glm-4-flash",
-        "creative": "zai/glm-4",
-        "fast": "ollama/llama3.2:3b"
+        "research": "zai/glm-4.7",
+        "creative": "zai/glm-5",
+        "fast": "zai/glm-4.5-air"
       }
     }
   }

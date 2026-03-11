@@ -536,7 +536,7 @@ openclaw channels status --probe
 - **Skool community URL** (for browser-based scraping)
 
 ### Optional cloud upgrades
-- **z.ai** — set `ZAI_API_KEY` + `ZAI_BASE_URL` and change model to `zai/glm-4`
+- **z.ai** — set `ZAI_API_KEY` + `ZAI_BASE_URL` and change model to `zai/glm-4.7`
 - **Anthropic / OpenAI** — set the corresponding API key and change model
 
 SearXNG is included in docker-compose. Zero API keys required for the base setup.
